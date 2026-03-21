@@ -1,9 +1,19 @@
-# Ignore files and directories in the .vs folder
-**/.vs/
+# CMake and build directories
+build/
+bin/
+bin-int/
 
-# Ignore directories
-**/bin/
-**/bin-int/
-
-#Ignore files
+# Visual Studio files
+.vs/
 **/*.user
+**/*.sln
+**/*.vcxproj
+**/*.filters
+
+# VS Code settings (optional)
+# .vscode/
+
+# Other temporary or compiled files
+*.exe
+*.obj
+*.pdb
