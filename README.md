@@ -6,7 +6,9 @@
 
 CMake 构建 | 源码与编译产物分离 | Visual Studio 开发
 
-</div>
+1. **生成工程**：双击运行项目根目录下的 `build_project.bat`，脚本将自动在 `build/` 目录下生成 Visual Studio 解决方案。
+2. **打开项目**：双击运行 `open_in_vs.bat`，拉起 Visual Studio。
+3. **编译调试**：在”解决方案资源管理器”中，右键需要运行的算法（如 `01_Array`），选择”设为启动项目”，直接点击运行 (F5) 即可。
 
 ---
 
