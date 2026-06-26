@@ -1,48 +1,88 @@
 @echo off
 chcp 65001 >nul
+setlocal EnableExtensions
+
 echo ==================================================
-echo         数据结构与算法 - 自动构建脚本
+echo        Data Structures - CMake Project Setup
 echo ==================================================
 echo.
 
-:: 检查 CMake 是否安装并可用
+set "BUILD_DIR=build"
+set "VS_GENERATOR="
+
 where cmake >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [错误] 您的系统未安装 CMake 或未将其添加到环境变量。
+if errorlevel 1 (
+    echo [ERROR] CMake was not found in PATH.
     echo.
-    echo 解决方法：
-    echo 1. 请前往官方网站下载：https://cmake.org/download/
-    echo 2. 在安装过程中，请务必勾选 "Add CMake to the system PATH for all users"。
-    echo 3. 安装完成后，重启终端或重新打开此脚本。
+    echo Install CMake and enable "Add CMake to the system PATH", then run this script again.
+    echo https://cmake.org/download/
     echo.
     pause
     exit /b 1
 )
-
-echo [进度] CMake 环境检查通过！正在创建构建目录...
-
-:: 创建并进入构建目录
-if not exist build (
-    mkdir build
-)
-cd build
+echo [OK] CMake found.
 
 echo.
-echo [进度] 正在生成项目配置文件...
-:: 强制使用 VS2022 构建（因为我两台电脑都装的vs2022，看自己需求可以改成其他版本）
-cmake -G "Visual Studio 17 2022" -A x64 ..
-if %errorlevel% neq 0 (
+echo [INFO] Looking for a usable Visual Studio C++ generator...
+call :try_generator "Visual Studio 18 2026"
+if defined VS_GENERATOR goto :generator_found
+
+call :try_generator "Visual Studio 17 2022"
+if defined VS_GENERATOR goto :generator_found
+
+call :try_generator "Visual Studio 16 2019"
+if defined VS_GENERATOR goto :generator_found
+
+echo.
+echo [ERROR] No usable Visual Studio C++ generator was found.
+echo.
+echo CMake may list Visual Studio generators even when Visual Studio is incomplete.
+echo Open Visual Studio Installer, repair or install Visual Studio, and include:
+echo   - Desktop development with C++
+echo   - MSVC C++ build tools
+echo   - Windows SDK
+echo.
+pause
+exit /b 1
+
+:generator_found
+echo [OK] Using %VS_GENERATOR%.
+echo.
+echo [INFO] Regenerating project files in "%BUILD_DIR%"...
+echo [INFO] Existing CMake cache will be refreshed, so moved/renamed source folders are handled.
+
+cmake -S "%CD%" -B "%BUILD_DIR%" -G "%VS_GENERATOR%" -A x64 --fresh
+if errorlevel 1 (
     echo.
-    echo [错误] CMake 配置文件生成失败，请检查源码或 CMakeLists.txt。
+    echo [ERROR] CMake configure failed. Check the error above.
+    echo.
     pause
     exit /b 1
 )
 
 echo.
 echo ==================================================
-echo                构建环境成功
-echo       双击 open_in_vs.bat 打开项目开发
+echo          Project files generated successfully
+echo          Run open_in_vs.bat to open Visual Studio
 echo ==================================================
 echo.
 pause
+exit /b 0
 
+:try_generator
+set "CANDIDATE=%~1"
+cmake --help | findstr /C:"%CANDIDATE%" >nul 2>nul
+if errorlevel 1 exit /b 1
+
+set "PROBE_DIR=%TEMP%\data-struct-cmake-probe-%RANDOM%-%RANDOM%"
+cmake -S "%CD%" -B "%PROBE_DIR%" -G "%CANDIDATE%" -A x64 >nul 2>nul
+set "PROBE_RESULT=%ERRORLEVEL%"
+
+if exist "%PROBE_DIR%" rmdir /s /q "%PROBE_DIR%" >nul 2>nul
+
+if "%PROBE_RESULT%"=="0" (
+    set "VS_GENERATOR=%CANDIDATE%"
+    exit /b 0
+)
+
+exit /b 1
